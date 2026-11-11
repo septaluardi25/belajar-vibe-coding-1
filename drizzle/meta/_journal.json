@@ -15,6 +15,13 @@
       "when": 1794389465780,
       "tag": "0001_little_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1794391492121,
+      "tag": "0002_green_rawhide_kid",
+      "breakpoints": true
     }
   ]
 }
