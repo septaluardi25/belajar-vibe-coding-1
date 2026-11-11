@@ -8,6 +8,13 @@
       "when": 1794385784733,
       "tag": "0000_demonic_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1794389465780,
+      "tag": "0001_little_exiles",
+      "breakpoints": true
     }
   ]
 }
