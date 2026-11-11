@@ -1,4 +1,4 @@
-import { int, mysqlTable, serial, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { bigint, mysqlTable, serial, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: serial("id").primaryKey(),
@@ -11,7 +11,7 @@ export const users = mysqlTable("users", {
 export const session = mysqlTable("session", {
   id: serial("id").primaryKey(),
   token: varchar("token", { length: 255 }).notNull(),
-  userId: int("user_id")
+  userId: bigint("user_id", { mode: "number", unsigned: true })
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
