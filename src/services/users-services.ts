@@ -90,3 +90,59 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
     data: token,
   };
 }
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+  created_at: string | Date;
+}
+
+export type GetCurrentUserResult =
+  | { success: true; data: UserProfile }
+  | { success: false; error: string; code: number };
+
+export async function getCurrentUser(token: string): Promise<GetCurrentUserResult> {
+  const [existingSession] = await db
+    .select()
+    .from(session)
+    .where(eq(session.token, token))
+    .limit(1);
+
+  if (!existingSession) {
+    return {
+      success: false,
+      error: "Unauthorized users",
+      code: 401,
+    };
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(eq(users.id, existingSession.userId))
+    .limit(1);
+
+  if (!user) {
+    return {
+      success: false,
+      error: "Unauthorized users",
+      code: 401,
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      created_at: user.createdAt,
+    },
+  };
+}
