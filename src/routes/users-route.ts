@@ -2,8 +2,17 @@ import { Elysia, t } from "elysia";
 import {
   getCurrentUser,
   loginUser,
+  logoutUser,
   registerUser,
 } from "../services/users-services";
+
+export function extractBearerToken(authHeader?: string): string | null {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+  const token = authHeader.slice(7).trim();
+  return token.length > 0 ? token : null;
+}
 
 export const usersRoute = new Elysia({ prefix: "/api" })
   .post(
@@ -11,7 +20,7 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     {
       body: t.Object({
         name: t.String({ minLength: 1 }),
-        email: t.String(),
+        email: t.String({ format: "email" }),
         password: t.String({ minLength: 1 }),
       }),
     },
@@ -71,25 +80,47 @@ export const usersRoute = new Elysia({ prefix: "/api" })
   )
   .get("/users/current", async ({ headers, set }) => {
     try {
-      const authHeader = headers["authorization"];
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        set.status = 401;
-        return {
-          error: "Unauthorized users",
-        };
-      }
-
-      const token = authHeader.slice(7).trim();
+      const token = extractBearerToken(headers["authorization"]);
 
       if (!token) {
         set.status = 401;
         return {
-          error: "Unauthorized users",
+          error: "Unauthorized",
         };
       }
 
       const result = await getCurrentUser(token);
+
+      if (!result.success) {
+        set.status = result.code;
+        return {
+          error: result.error,
+        };
+      }
+
+      set.status = 200;
+      return {
+        data: result.data,
+      };
+    } catch (err: any) {
+      set.status = 500;
+      return {
+        error: err?.message || "Internal server error",
+      };
+    }
+  })
+  .delete("/users/logout", async ({ headers, set }) => {
+    try {
+      const token = extractBearerToken(headers["authorization"]);
+
+      if (!token) {
+        set.status = 401;
+        return {
+          error: "Unauthorized",
+        };
+      }
+
+      const result = await logoutUser(token);
 
       if (!result.success) {
         set.status = result.code;
