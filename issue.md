@@ -64,3 +64,4 @@ Inisialisasi project backend baru pada folder ini menggunakan runtime dan packag
 - [x] Script migrasi/push schema Drizzle (`drizzle-kit`) dapat dieksekusi dengan baik.
 - [x] File rahasia `.env` tidak terlacak oleh Git.
 - [x] Dokumentasi cara setup dan menjalankan aplikasi tertulis jelas di `README.md`.
+
