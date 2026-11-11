@@ -33,3 +33,4 @@ export const usersRoute = new Elysia({ prefix: "/api" }).post(
     }
   }
 );
+
