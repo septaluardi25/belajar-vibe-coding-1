@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import type { ResultSetHeader } from "mysql2";
 import { db } from "../db";
 import { session, users } from "../db/schema";
 
@@ -112,7 +113,7 @@ export async function getCurrentUser(token: string): Promise<GetCurrentUserResul
   if (!existingSession) {
     return {
       success: false,
-      error: "Unauthorized users",
+      error: "Unauthorized",
       code: 401,
     };
   }
@@ -131,7 +132,7 @@ export async function getCurrentUser(token: string): Promise<GetCurrentUserResul
   if (!user) {
     return {
       success: false,
-      error: "Unauthorized users",
+      error: "Unauthorized",
       code: 401,
     };
   }
@@ -152,21 +153,17 @@ export type LogoutResult =
   | { success: false; error: string; code: number };
 
 export async function logoutUser(token: string): Promise<LogoutResult> {
-  const [existingSession] = await db
-    .select()
-    .from(session)
-    .where(eq(session.token, token))
-    .limit(1);
+  const [result] = (await db
+    .delete(session)
+    .where(eq(session.token, token))) as unknown as [ResultSetHeader, unknown];
 
-  if (!existingSession) {
+  if (!result || result.affectedRows === 0) {
     return {
       success: false,
       error: "Unauthorized",
       code: 401,
     };
   }
-
-  await db.delete(session).where(eq(session.token, token));
 
   return {
     success: true,
