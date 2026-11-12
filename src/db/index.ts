@@ -2,11 +2,17 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import * as schema from "./schema";
 
-const dbHost = process.env.DB_HOST || "127.0.0.1";
-const dbPort = Number(process.env.DB_PORT) || 3306;
-const dbUser = process.env.DB_USER || "root";
-const dbPassword = process.env.DB_PASSWORD || "";
-const dbName = process.env.DB_NAME || "belajar_vibe_coding";
+const dbHost = process.env.DB_HOST ?? "127.0.0.1";
+const dbPort = Number(process.env.DB_PORT ?? "3306");
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASSWORD;
+const dbName = process.env.DB_NAME;
+
+if (!dbUser || dbPassword === undefined || !dbName) {
+  throw new Error(
+    "Missing required environment variables: DB_USER, DB_PASSWORD, DB_NAME"
+  );
+}
 
 export const poolConnection = mysql.createPool({
   host: dbHost,

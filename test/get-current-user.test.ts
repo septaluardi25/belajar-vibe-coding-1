@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { app } from "../src/index";
 import { clearDatabase } from "./helpers";
+import type { ApiSuccessResponse, UserProfileResponse } from "./types";
 
 describe("GET /api/users/current", () => {
   const defaultUser = {
@@ -34,7 +35,7 @@ describe("GET /api/users/current", () => {
         }),
       })
     );
-    const loginBody = (await loginRes.json()) as any;
+    const loginBody = (await loginRes.json()) as ApiSuccessResponse<string>;
     validToken = loginBody.data;
   });
 
@@ -50,7 +51,7 @@ describe("GET /api/users/current", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = (await res.json()) as any;
+      const body = (await res.json()) as ApiSuccessResponse<UserProfileResponse>;
       expect(body.data).toBeDefined();
       expect(typeof body.data.id).toBe("number");
       expect(body.data.name).toBe(defaultUser.name);

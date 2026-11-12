@@ -2,7 +2,8 @@ import { Elysia } from "elysia";
 import { checkDatabaseConnection } from "./db";
 import { usersRoute } from "./routes/users-route";
 
-const port = Number(process.env.PORT) || 3000;
+const rawPort = Number(process.env.PORT);
+const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : 3000;
 
 export const app = new Elysia()
   .get("/", () => ({

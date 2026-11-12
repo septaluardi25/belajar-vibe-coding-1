@@ -119,6 +119,22 @@ describe("POST /api/users", () => {
 
       expect(res.status).toBe(422);
     });
+
+    it("harus ditolak jika password kurang dari 8 karakter", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "Dimas",
+            email: "dimas@example.com",
+            password: "pendek",
+          }),
+        })
+      );
+
+      expect(res.status).toBe(422);
+    });
   });
 
   describe("Skenario Duplikasi", () => {
