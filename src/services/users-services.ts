@@ -13,6 +13,13 @@ export type RegisterResult =
   | { success: true; data: "OK" }
   | { success: false; error: string; code: number };
 
+/**
+ * Mendaftarkan user baru ke dalam database.
+ *
+ * Memeriksa apakah email sudah terdaftar, melakukan hashing password
+ * menggunakan bcrypt, lalu menyimpan data user baru ke tabel `users`.
+ * Mengembalikan error 400 jika email sudah digunakan, atau `"OK"` jika berhasil.
+ */
 export async function registerUser(input: RegisterUserInput): Promise<RegisterResult> {
   const existingUser = await db
     .select()
@@ -54,6 +61,13 @@ export type LoginResult =
   | { success: true; data: string }
   | { success: false; error: string; code: number };
 
+/**
+ * Melakukan autentikasi (login) user menggunakan email dan password.
+ *
+ * Memverifikasi kecocokan email dan password terhadap hash bcrypt yang tersimpan.
+ * Jika valid, menghasilkan token sesi acak (UUID), menyimpannya ke tabel `session`,
+ * dan mengembalikan token tersebut; atau error 400 jika kredensial salah.
+ */
 export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
   const [existingUser] = await db
     .select()
@@ -103,6 +117,13 @@ export type GetCurrentUserResult =
   | { success: true; data: UserProfile }
   | { success: false; error: string; code: number };
 
+/**
+ * Mengambil profil user yang sedang login berdasarkan token sesi.
+ *
+ * Melakukan query join antara tabel `session` dan `users` menggunakan token.
+ * Mengembalikan data profil user (`id`, `name`, `email`, `created_at`) jika token valid,
+ * atau error 401 (`"Unauthorized"`) jika sesi tidak ditemukan.
+ */
 export async function getCurrentUser(token: string): Promise<GetCurrentUserResult> {
   const [result] = await db
     .select({
@@ -139,6 +160,13 @@ export type LogoutResult =
   | { success: true; data: "OK" }
   | { success: false; error: string; code: number };
 
+/**
+ * Melakukan logout user dengan menghapus sesi aktif berdasarkan token.
+ *
+ * Menghapus record sesi pada tabel `session` yang cocok dengan token yang diberikan
+ * tanpa memengaruhi sesi lain milik user tersebut. Mengembalikan `"OK"` jika berhasil,
+ * atau error 401 (`"Unauthorized"`) jika token tidak ditemukan.
+ */
 export async function logoutUser(token: string): Promise<LogoutResult> {
   const [result] = (await db
     .delete(session)
