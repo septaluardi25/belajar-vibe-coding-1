@@ -1,86 +1,144 @@
-# Issue: Registrasi gagal ketika `name` melebihi 255 karakter
+# Issue: Buatkan Unit Test untuk Semua API
 
 ## Deskripsi
-Saat mencoba mendaftarkan user baru dengan **nama lebih dari 255 karakter**, API mengembalikan **500 Internal Server Error**. Error ini berasal dari pernyataan `INSERT` MySQL karena kolom `users.name` didefinisikan sebagai `VARCHAR(255)`. Payload request terlihat seperti:
+Proyek ini belum memiliki unit test. Diperlukan unit test yang lengkap untuk semua endpoint API yang tersedia menggunakan **Bun test** (`bun test`).
 
-```json
-{
-  "name": "aaaaaaaa... (300 karakter)",
-  "email": "longname@example.com",
-  "password": "secret123"
-}
+## Aturan Umum
+- Simpan semua file test di folder `test/` pada root project.
+- Gunakan `bun test` untuk menjalankan test.
+- **Setiap skenario test, hapus data terkait terlebih dahulu** (bersihkan tabel `session` dan `users` sebelum tiap test) agar hasilnya konsisten dan tidak tergantung pada data sebelumnya.
+- Gunakan `app.handle(new Request(...))` dari Elysia untuk mengirim request tanpa perlu menjalankan server secara terpisah.
+- Gunakan `describe` dan `it`/`test` untuk mengelompokkan skenario test.
+- Gunakan `beforeEach` atau `beforeAll` untuk membersihkan data sebelum setiap skenario.
+
+## Daftar API yang Harus Ditest
+
+### 1. `GET /` — Root / Welcome
+**File test**: `test/root.test.ts`
+
+**Skenario**:
+- Harus mengembalikan status `200`
+- Harus mengembalikan `{ success: true, message: "..." }`
+
+---
+
+### 2. `GET /health` — Health Check
+**File test**: `test/health.test.ts`
+
+**Skenario**:
+- Harus mengembalikan status `200` dengan `{ status: "healthy", ... }` ketika DB terhubung
+- Harus mengembalikan field `uptime` bertipe number
+- Harus mengembalikan field `database` yang berisi status koneksi DB
+
+---
+
+### 3. `POST /api/users` — Registrasi User
+**File test**: `test/register.test.ts`
+
+**Skenario sukses**:
+- Registrasi dengan data valid (name, email, password) → status `200`, response `{ data: "OK" }`
+
+**Skenario validasi (harus ditolak)**:
+- Body kosong (tanpa field apapun)
+- `name` kosong (string kosong `""`)
+- `name` melebihi 255 karakter
+- `email` kosong
+- `email` format tidak valid (bukan format email)
+- `password` kosong
+
+**Skenario duplikasi**:
+- Registrasi dengan email yang sudah terdaftar → harus error `400` dengan pesan `"email sudah terdaftar"`
+
+---
+
+### 4. `POST /api/users/login` — Login User
+**File test**: `test/login.test.ts`
+
+> **Prasyarat**: sebelum test login, daftarkan user terlebih dahulu di `beforeEach`/`beforeAll`.
+
+**Skenario sukses**:
+- Login dengan email dan password yang benar → status `200`, response `{ data: "<token>" }` (token berupa string UUID)
+
+**Skenario gagal**:
+- Email tidak terdaftar → status `400`, error `"email atau password salah"`
+- Email terdaftar tapi password salah → status `400`, error `"email atau password salah"`
+- Body kosong
+- `email` kosong
+- `password` kosong
+
+**Skenario multiple session**:
+- Login dua kali dengan user yang sama → harus menghasilkan dua token yang berbeda (multiple session didukung)
+
+---
+
+### 5. `GET /api/users/current` — Get Current User
+**File test**: `test/get-current-user.test.ts`
+
+> **Prasyarat**: daftarkan user dan login terlebih dahulu untuk mendapatkan token.
+
+**Skenario sukses**:
+- Request dengan header `Authorization: Bearer <token_valid>` → status `200`, response `{ data: { id, name, email, created_at } }`
+- Pastikan field `id` bertipe number
+- Pastikan field `name` dan `email` sesuai dengan data yang didaftarkan
+- Pastikan field `created_at` ada dan tidak kosong
+
+**Skenario gagal**:
+- Tanpa header `Authorization` → status `401`, error `"Unauthorized"`
+- Header `Authorization` tanpa prefix `Bearer` (misalnya `Authorization: <token>`) → status `401`
+- Header `Authorization: Bearer ` (ada prefix tapi token kosong) → status `401`
+- Token tidak valid / tidak ada di database → status `401`, error `"Unauthorized"`
+- Token yang sudah di-logout (sudah dihapus dari session) → status `401`
+
+---
+
+### 6. `DELETE /api/users/logout` — Logout User
+**File test**: `test/logout.test.ts`
+
+> **Prasyarat**: daftarkan user dan login terlebih dahulu untuk mendapatkan token.
+
+**Skenario sukses**:
+- Logout dengan token valid → status `200`, response `{ data: "OK" }`
+- Setelah logout, token tersebut tidak bisa digunakan lagi untuk `GET /api/users/current` (harus `401`)
+
+**Skenario gagal**:
+- Tanpa header `Authorization` → status `401`, error `"Unauthorized"`
+- Header `Authorization` tanpa prefix `Bearer` → status `401`
+- Token tidak valid / tidak ada di database → status `401`, error `"Unauthorized"`
+- Logout dua kali dengan token yang sama → yang pertama `200`, yang kedua `401`
+
+**Skenario multiple session**:
+- User login dua kali (dapat token A dan token B), logout token A → token A tidak bisa digunakan, tapi token B masih bisa digunakan
+
+---
+
+## Struktur Folder yang Diharapkan
+
+```
+test/
+├── root.test.ts
+├── health.test.ts
+├── register.test.ts
+├── login.test.ts
+├── get-current-user.test.ts
+└── logout.test.ts
 ```
 
-MySQL menolak insert tersebut, dan server meneruskan error DB sebagai:
+## Cara Menjalankan
 
-```json
-{ "error": "Failed query: insert into `users` ... params: aaaaaaaaa..." }
+```bash
+bun test
 ```
 
-## Tujuan
-Memberikan panduan langkah‑demi‑langkah yang jelas untuk programmer junior (atau model AI yang lebih murah) agar memperbaiki masalah ini sehingga:
-- API melakukan validasi panjang input **sebelum** menyentuh database, mengembalikan `400 Bad Request` yang ramah.
-- Atau, bila diperlukan nama yang lebih panjang, skema basis data diperbarui dan migrasi dijalankan.
-
----
-
-## Pilihan Perbaikan
-### 1️⃣ Tambahkan validasi pada level request (direkomendasikan bila batas 255 karakter sudah cukup)
-1. Buka file `src/routes/users-route.ts`.
-2. Temukan definisi route registrasi (`POST "/users"`).
-3. Tambahkan batas maksimum pada field `name`:
-   ```ts
-   name: t.String({ minLength: 1, maxLength: 255 })
-   ```
-4. Simpan file.
-5. Jalankan `bun check` untuk memastikan tidak ada error TypeScript.
-6. Restart server (`bun src/index.ts`).
-7. Uji kembali registrasi dengan nama 300 karakter – kini harus mendapat respons:
-   ```json
-   { "error": "name must be at most 255 characters" }
-   ```
-   (Elysia otomatis mengembalikan status 400 untuk pelanggaran schema.)
-
-### 2️⃣ Perbesar ukuran kolom di database (jika memang perlu nama lebih panjang)
-1. Buka file `src/db/schema.ts`.
-2. Ubah definisi kolom `name`:
-   ```ts
-   // sebelumnya
-   name: varchar("name", { length: 255 }).notNull(),
-   // ganti menjadi (contoh 512)
-   name: varchar("name", { length: 512 }).notNull(),
-   ```
-3. Buat migrasi baru:
-   ```bash
-   bun db:push   # akan menghasilkan skrip migrasi di folder drizzle/
-   ```
-4. Terapkan migrasi ke DB lokal:
-   ```bash
-   bun db:migrate
-   ```
-5. (Opsional) Perbarui validasi di route dengan `maxLength` yang sesuai.
-6. Restart server dan jalankan kembali tes registrasi – kini request harus berhasil dengan status 200 dan data user baru.
-
----
-
-## Checklist untuk Programmer Junior
-- [ ] **Validasi input** – tambahkan `maxLength: 255` (atau ukuran yang cocok) pada schema route.
-- [ ] **Jalankan type‑check** – `bun check` → tidak ada error.
-- [ ] **Restart server** – `bun src/index.ts` (atau gunakan watcher).
-- [ ] **Uji** – coba registrasi user dengan nama >255 karakter; harus mendapat error 400.
-- Jika memilih opsi perubahan skema:
-  - [ ] **Update skema DB** (`src/db/schema.ts`).
-  - [ ] **Buat migrasi** (`bun db:push`).
-  - [ ] **Terapkan migrasi** (`bun db:migrate`).
-  - [ ] **Sesuaikan validasi** (jika diperlukan).
-  - [ ] **Uji kembali** – registrasi harus berhasil.
-
----
-
-## Tips Tambahan
-- Simpan logika validasi di **layer route**; ini mencegah data tidak valid masuk ke service layer.
-- Jika diperkirakan nama akan jauh lebih panjang di masa depan, pertimbangkan memakai tipe `TEXT` alih‑alih `VARCHAR` dengan ukuran tetap.
-- Setelah ada perubahan skema, selalu jalankan seluruh test suite (`bun test` jika ada) untuk memastikan tidak ada yang rusak.
+## Checklist
+- [ ] Buat folder `test/`
+- [ ] Buat helper/util untuk membersihkan data sebelum setiap test
+- [ ] Buat `test/root.test.ts`
+- [ ] Buat `test/health.test.ts`
+- [ ] Buat `test/register.test.ts`
+- [ ] Buat `test/login.test.ts`
+- [ ] Buat `test/get-current-user.test.ts`
+- [ ] Buat `test/logout.test.ts`
+- [ ] Jalankan `bun test` dan pastikan semua test passed
 
 ---
 
