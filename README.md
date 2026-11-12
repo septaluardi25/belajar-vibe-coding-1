@@ -12,6 +12,7 @@ Setelah login, server membuat token (UUID) yang disimpan di tabel `session`. Tok
 |---|---|
 | Runtime, package manager, test runner | [Bun](https://bun.sh/) |
 | Web framework | [ElysiaJS](https://elysiajs.com/) (validasi request memakai `t` / TypeBox bawaan Elysia) |
+| API Documentation | Swagger / OpenAPI UI via `@elysiajs/swagger` |
 | ORM & migrasi | [Drizzle ORM](https://orm.drizzle.team/) + [drizzle-kit](https://orm.drizzle.team/kit-docs/overview) |
 | Driver database | [mysql2](https://github.com/sidorares/node-mysql2) |
 | Database | MySQL 8 |
@@ -132,8 +133,14 @@ Server berjalan di `http://localhost:3000` (atau sesuai `PORT`).
 
 Semua endpoint user berada di bawah prefix `/api`. Body request berformat JSON.
 
+Dokumentasi Swagger UI interaktif dapat diakses langsung melalui browser di:
+- **Swagger UI**: `http://localhost:3000/swagger`
+- **OpenAPI JSON**: `http://localhost:3000/swagger/json`
+
 | Method | Path | Auth | Deskripsi |
 |---|---|---|---|
+| `GET` | `/swagger` | - | Dokumentasi interaktif Swagger UI |
+| `GET` | `/swagger/json` | - | Spesifikasi OpenAPI dalam format JSON |
 | `GET` | `/` | - | Info bahwa server berjalan |
 | `GET` | `/health` | - | Health check + status koneksi database |
 | `POST` | `/api/users` | - | Registrasi user baru |
@@ -226,6 +233,7 @@ bun run typecheck                 # cek tipe TypeScript
 |---|---|
 | `root.test.ts` | `GET /` |
 | `health.test.ts` | `GET /health` |
+| `swagger.test.ts` | `GET /swagger` dan `GET /swagger/json` (OpenAPI specification & Bearer Auth) |
 | `register.test.ts` | Registrasi: sukses, validasi (name/email/password), batas panjang, email duplikat |
 | `login.test.ts` | Login: sukses, email/password salah, validasi, multi-session |
 | `get-current-user.test.ts` | Profil user: token valid, header salah, token tidak valid, token yang sudah logout |
