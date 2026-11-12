@@ -46,10 +46,50 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     },
     {
       body: t.Object({
-        name: t.String({ minLength: 1, maxLength: 255 }),
-        email: t.String({ format: "email" }),
-        password: t.String({ minLength: 8, maxLength: 72 }),
+        name: t.String({
+          minLength: 1,
+          maxLength: 255,
+          examples: ["Dimas Septaluardi"],
+          description: "Nama lengkap user (1-255 karakter)",
+        }),
+        email: t.String({
+          format: "email",
+          examples: ["dimas@example.com"],
+          description: "Alamat email unik user",
+        }),
+        password: t.String({
+          minLength: 8,
+          maxLength: 72,
+          examples: ["rahasia123"],
+          description: "Password user (8-72 karakter)",
+        }),
       }),
+      response: {
+        200: t.Object(
+          {
+            data: t.String({ examples: ["OK"] }),
+          },
+          { description: "Registrasi berhasil" }
+        ),
+        400: t.Object(
+          {
+            error: t.String({ examples: ["email sudah terdaftar"] }),
+          },
+          { description: "Email sudah digunakan sebelumnya" }
+        ),
+        422: t.Object(
+          {
+            error: t.String({ examples: ["Validation Error"] }),
+          },
+          { description: "Validasi field request gagal (format email salah, password terlalu pendek/panjang)" }
+        ),
+        500: t.Object(
+          {
+            error: t.String({ examples: ["Internal server error"] }),
+          },
+          { description: "Terjadi kesalahan internal pada server" }
+        ),
+      },
       detail: {
         tags: ["Users"],
         summary: "Register user baru",
@@ -84,9 +124,46 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     },
     {
       body: t.Object({
-        email: t.String({ format: "email" }),
-        password: t.String({ minLength: 1 }),
+        email: t.String({
+          format: "email",
+          examples: ["dimas@example.com"],
+          description: "Alamat email user yang terdaftar",
+        }),
+        password: t.String({
+          minLength: 1,
+          examples: ["rahasia123"],
+          description: "Password akun user",
+        }),
       }),
+      response: {
+        200: t.Object(
+          {
+            data: t.String({
+              examples: ["9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"],
+              description: "Token sesi (UUID) untuk otorisasi endpoint berikutnya",
+            }),
+          },
+          { description: "Login berhasil, mengembalikan token sesi" }
+        ),
+        400: t.Object(
+          {
+            error: t.String({ examples: ["email atau password salah"] }),
+          },
+          { description: "Kredensial login tidak cocok" }
+        ),
+        422: t.Object(
+          {
+            error: t.String({ examples: ["Validation Error"] }),
+          },
+          { description: "Format input body tidak valid" }
+        ),
+        500: t.Object(
+          {
+            error: t.String({ examples: ["Internal server error"] }),
+          },
+          { description: "Terjadi kesalahan internal pada server" }
+        ),
+      },
       detail: {
         tags: ["Users"],
         summary: "Login user",
@@ -129,6 +206,33 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       }
     },
     {
+      response: {
+        200: t.Object(
+          {
+            data: t.Object({
+              id: t.Number({ examples: [1] }),
+              name: t.String({ examples: ["Dimas Septaluardi"] }),
+              email: t.String({ examples: ["dimas@example.com"] }),
+              created_at: t.Union([t.String(), t.Date()], {
+                examples: ["2026-11-12T06:00:00.000Z"],
+              }),
+            }),
+          },
+          { description: "Profil user berhasil diambil" }
+        ),
+        401: t.Object(
+          {
+            error: t.String({ examples: ["Unauthorized"] }),
+          },
+          { description: "Token tidak diberikan, tidak valid, atau telah logout" }
+        ),
+        500: t.Object(
+          {
+            error: t.String({ examples: ["Internal server error"] }),
+          },
+          { description: "Terjadi kesalahan internal pada server" }
+        ),
+      },
       detail: {
         tags: ["Users"],
         summary: "Get current user profile",
@@ -172,6 +276,26 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       }
     },
     {
+      response: {
+        200: t.Object(
+          {
+            data: t.String({ examples: ["OK"] }),
+          },
+          { description: "Logout berhasil dan sesi dihapus" }
+        ),
+        401: t.Object(
+          {
+            error: t.String({ examples: ["Unauthorized"] }),
+          },
+          { description: "Token tidak valid atau sudah logout sebelumnya" }
+        ),
+        500: t.Object(
+          {
+            error: t.String({ examples: ["Internal server error"] }),
+          },
+          { description: "Terjadi kesalahan internal pada server" }
+        ),
+      },
       detail: {
         tags: ["Users"],
         summary: "Logout user",

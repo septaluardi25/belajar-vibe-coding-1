@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { checkDatabaseConnection } from "./db";
 import { usersRoute } from "./routes/users-route";
@@ -39,6 +39,19 @@ export const app = new Elysia()
       message: "Server is running with Bun, Elysia, Drizzle ORM, and MySQL",
     }),
     {
+      response: {
+        200: t.Object(
+          {
+            success: t.Boolean({ examples: [true] }),
+            message: t.String({
+              examples: ["Server is running with Bun, Elysia, Drizzle ORM, and MySQL"],
+            }),
+          },
+          {
+            description: "Informasi status server berhasil berjalan",
+          }
+        ),
+      },
       detail: {
         tags: ["General"],
         summary: "Root endpoint",
@@ -65,6 +78,34 @@ export const app = new Elysia()
       };
     },
     {
+      response: {
+        200: t.Object(
+          {
+            status: t.String({ examples: ["healthy"] }),
+            uptime: t.Number({ examples: [12.34] }),
+            database: t.Object({
+              ok: t.Boolean({ examples: [true] }),
+              message: t.String({ examples: ["Database connected successfully"] }),
+            }),
+          },
+          {
+            description: "Status server normal dan database terhubung",
+          }
+        ),
+        503: t.Object(
+          {
+            status: t.String({ examples: ["degraded"] }),
+            uptime: t.Number({ examples: [12.34] }),
+            database: t.Object({
+              ok: t.Boolean({ examples: [false] }),
+              message: t.String({ examples: ["Failed to connect to database"] }),
+            }),
+          },
+          {
+            description: "Status server degraded (koneksi database bermasalah)",
+          }
+        ),
+      },
       detail: {
         tags: ["General"],
         summary: "Health check",
