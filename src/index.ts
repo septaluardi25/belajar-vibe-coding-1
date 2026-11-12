@@ -1,8 +1,9 @@
 import { Elysia } from "elysia";
 import { checkDatabaseConnection } from "./db";
 import { usersRoute } from "./routes/users-route";
+import { parsePort } from "./utils/port";
 
-const port = Number(process.env.PORT) || 3000;
+const port = parsePort(process.env.PORT, 3000);
 
 export const app = new Elysia()
   .get("/", () => ({

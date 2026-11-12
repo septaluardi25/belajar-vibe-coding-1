@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { app } from "../src/index";
 import { clearDatabase } from "./helpers";
+import type { ApiSuccessResponse, UserProfileResponse } from "./types";
 
 describe("DELETE /api/users/logout", () => {
   const defaultUser = {
@@ -34,7 +35,7 @@ describe("DELETE /api/users/logout", () => {
         }),
       })
     );
-    const loginBody = (await loginRes.json()) as any;
+    const loginBody = (await loginRes.json()) as ApiSuccessResponse<string>;
     validToken = loginBody.data;
   });
 
@@ -63,6 +64,21 @@ describe("DELETE /api/users/logout", () => {
         })
       );
       expect(currentRes.status).toBe(401);
+    });
+
+    it("harus berhasil logout dengan prefix bearer huruf kecil", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/logout", {
+          method: "DELETE",
+          headers: {
+            Authorization: `bearer ${validToken}`,
+          },
+        })
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({ data: "OK" });
     });
   });
 
@@ -149,7 +165,7 @@ describe("DELETE /api/users/logout", () => {
           }),
         })
       );
-      const loginBody2 = (await loginRes2.json()) as any;
+      const loginBody2 = (await loginRes2.json()) as ApiSuccessResponse<string>;
       const token2 = loginBody2.data;
 
       // Logout token pertama
@@ -184,7 +200,7 @@ describe("DELETE /api/users/logout", () => {
         })
       );
       expect(checkToken2.status).toBe(200);
-      const body2 = (await checkToken2.json()) as any;
+      const body2 = (await checkToken2.json()) as ApiSuccessResponse<UserProfileResponse>;
       expect(body2.data.email).toBe(defaultUser.email);
     });
   });

@@ -104,32 +104,19 @@ export type GetCurrentUserResult =
   | { success: false; error: string; code: number };
 
 export async function getCurrentUser(token: string): Promise<GetCurrentUserResult> {
-  const [existingSession] = await db
-    .select()
-    .from(session)
-    .where(eq(session.token, token))
-    .limit(1);
-
-  if (!existingSession) {
-    return {
-      success: false,
-      error: "Unauthorized",
-      code: 401,
-    };
-  }
-
-  const [user] = await db
+  const [result] = await db
     .select({
       id: users.id,
       name: users.name,
       email: users.email,
       createdAt: users.createdAt,
     })
-    .from(users)
-    .where(eq(users.id, existingSession.userId))
+    .from(session)
+    .innerJoin(users, eq(session.userId, users.id))
+    .where(eq(session.token, token))
     .limit(1);
 
-  if (!user) {
+  if (!result) {
     return {
       success: false,
       error: "Unauthorized",
@@ -140,10 +127,10 @@ export async function getCurrentUser(token: string): Promise<GetCurrentUserResul
   return {
     success: true,
     data: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      created_at: user.createdAt,
+      id: result.id,
+      name: result.name,
+      email: result.email,
+      created_at: result.createdAt,
     },
   };
 }

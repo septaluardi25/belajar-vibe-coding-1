@@ -1,12 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { app } from "../src/index";
+import type { HealthCheckResponse } from "./types";
 
 describe("GET /health", () => {
   it("harus mengembalikan status 200 dan status healthy ketika DB terhubung", async () => {
     const res = await app.handle(new Request("http://localhost/health"));
     expect(res.status).toBe(200);
 
-    const body = (await res.json()) as any;
+    const body = (await res.json()) as HealthCheckResponse;
     expect(body.status).toBe("healthy");
     expect(typeof body.uptime).toBe("number");
     expect(body.database).toBeDefined();

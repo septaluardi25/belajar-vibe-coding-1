@@ -7,10 +7,14 @@ import {
 } from "../services/users-services";
 
 export function extractBearerToken(authHeader?: string): string | null {
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader) {
     return null;
   }
-  const token = authHeader.slice(7).trim();
+  const trimmed = authHeader.trim();
+  if (!/^Bearer\s+/i.test(trimmed)) {
+    return null;
+  }
+  const token = trimmed.replace(/^Bearer\s+/i, "").trim();
   return token.length > 0 ? token : null;
 }
 
@@ -21,7 +25,7 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       body: t.Object({
         name: t.String({ minLength: 1, maxLength: 255 }),
         email: t.String({ format: "email" }),
-        password: t.String({ minLength: 1 }),
+        password: t.String({ minLength: 8, maxLength: 72 }),
       }),
     },
     async ({ body, set }) => {
@@ -39,10 +43,11 @@ export const usersRoute = new Elysia({ prefix: "/api" })
         return {
           data: result.data,
         };
-      } catch (err: any) {
+      } catch (err: unknown) {
+        console.error("Error in POST /api/users:", err);
         set.status = 500;
         return {
-          error: err?.message || "Internal server error",
+          error: "Internal server error",
         };
       }
     }
@@ -51,7 +56,7 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     "/users/login",
     {
       body: t.Object({
-        email: t.String(),
+        email: t.String({ format: "email" }),
         password: t.String({ minLength: 1 }),
       }),
     },
@@ -70,10 +75,11 @@ export const usersRoute = new Elysia({ prefix: "/api" })
         return {
           data: result.data,
         };
-      } catch (err: any) {
+      } catch (err: unknown) {
+        console.error("Error in POST /api/users/login:", err);
         set.status = 500;
         return {
-          error: err?.message || "Internal server error",
+          error: "Internal server error",
         };
       }
     }
@@ -102,10 +108,11 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       return {
         data: result.data,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error("Error in GET /api/users/current:", err);
       set.status = 500;
       return {
-        error: err?.message || "Internal server error",
+        error: "Internal server error",
       };
     }
   })
@@ -133,10 +140,11 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       return {
         data: result.data,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error("Error in DELETE /api/users/logout:", err);
       set.status = 500;
       return {
-        error: err?.message || "Internal server error",
+        error: "Internal server error",
       };
     }
   });

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { app } from "../src/index";
 import { clearDatabase } from "./helpers";
+import type { ApiSuccessResponse } from "./types";
 
 describe("POST /api/users/login", () => {
   const defaultUser = {
@@ -35,7 +36,7 @@ describe("POST /api/users/login", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = (await res.json()) as any;
+      const body = (await res.json()) as ApiSuccessResponse<string>;
       expect(body.data).toBeDefined();
       expect(typeof body.data).toBe("string");
       expect(body.data.length).toBeGreaterThan(0);
@@ -93,6 +94,21 @@ describe("POST /api/users/login", () => {
       expect(res.status).toBe(422);
     });
 
+    it("harus ditolak jika format email tidak valid", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "bukan-email",
+            password: "password123",
+          }),
+        })
+      );
+
+      expect(res.status).toBe(422);
+    });
+
     it("harus ditolak jika email tidak disediakan", async () => {
       const res = await app.handle(
         new Request("http://localhost/api/users/login", {
@@ -136,7 +152,7 @@ describe("POST /api/users/login", () => {
         })
       );
       expect(res1.status).toBe(200);
-      const body1 = (await res1.json()) as any;
+      const body1 = (await res1.json()) as ApiSuccessResponse<string>;
 
       const res2 = await app.handle(
         new Request("http://localhost/api/users/login", {
@@ -149,7 +165,7 @@ describe("POST /api/users/login", () => {
         })
       );
       expect(res2.status).toBe(200);
-      const body2 = (await res2.json()) as any;
+      const body2 = (await res2.json()) as ApiSuccessResponse<string>;
 
       expect(body1.data).not.toBe(body2.data);
     });
