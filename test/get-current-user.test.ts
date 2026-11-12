@@ -58,6 +58,21 @@ describe("GET /api/users/current", () => {
       expect(body.data.email).toBe(defaultUser.email);
       expect(body.data.created_at).toBeDefined();
     });
+
+    it("harus berhasil jika prefix bearer menggunakan huruf kecil (case-insensitive)", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            Authorization: `bearer ${validToken}`,
+          },
+        })
+      );
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as ApiSuccessResponse<UserProfileResponse>;
+      expect(body.data.email).toBe(defaultUser.email);
+    });
   });
 
   describe("Skenario Gagal", () => {

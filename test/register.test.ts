@@ -135,6 +135,68 @@ describe("POST /api/users", () => {
 
       expect(res.status).toBe(422);
     });
+
+    it("harus ditolak jika password lebih dari 72 karakter (batas bcrypt)", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "Dimas",
+            email: "dimas@example.com",
+            password: "a".repeat(73),
+          }),
+        })
+      );
+
+      expect(res.status).toBe(422);
+    });
+
+    it("harus berhasil jika password tepat 8 karakter dan tepat 72 karakter", async () => {
+      // Tepat 8 karakter
+      const res8 = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "User Delapan",
+            email: "delapan@example.com",
+            password: "a".repeat(8),
+          }),
+        })
+      );
+      expect(res8.status).toBe(200);
+
+      // Tepat 72 karakter
+      const res72 = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "User Tujuh Puluh Dua",
+            email: "tujuhdua@example.com",
+            password: "a".repeat(72),
+          }),
+        })
+      );
+      expect(res72.status).toBe(200);
+    });
+
+    it("harus berhasil jika name tepat 255 karakter", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "a".repeat(255),
+            email: "tepat255@example.com",
+            password: "password123",
+          }),
+        })
+      );
+
+      expect(res.status).toBe(200);
+    });
   });
 
   describe("Skenario Duplikasi", () => {

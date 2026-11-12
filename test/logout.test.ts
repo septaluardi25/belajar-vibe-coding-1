@@ -65,6 +65,21 @@ describe("DELETE /api/users/logout", () => {
       );
       expect(currentRes.status).toBe(401);
     });
+
+    it("harus berhasil logout dengan prefix bearer huruf kecil", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/logout", {
+          method: "DELETE",
+          headers: {
+            Authorization: `bearer ${validToken}`,
+          },
+        })
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({ data: "OK" });
+    });
   });
 
   describe("Skenario Gagal", () => {
